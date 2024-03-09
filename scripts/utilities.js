@@ -1,10 +1,7 @@
 import * as mc from "@minecraft/server";
 import TestRunner from "./tests/test_main";
-
+import UIExample from "./ui";
 export default class Utility {
-    static debug = false;
-    static packNamespace = 'wumpus';
-
     static init() {
         mc.system.afterEvents.scriptEventReceive.subscribe(event => {
             let event_name = event.id;
@@ -14,11 +11,17 @@ export default class Utility {
                 return;
             }
             //strip the required namespace off the event name
-            Utility.handleDebugCommand(event_name.split(':')[1], event.message);
+            Utility.handleDebugCommand(event_name.split(':')[1], event.message, Utility.getPlayer1());
         });
     }
-
-    static handleDebugCommand(event, message = undefined) {
+    static getPlayer1() {
+        let players = mc.world.getAllPlayers();
+        if (players.length > 0) {
+            return players[0];
+        }
+        return undefined;
+    }
+    static handleDebugCommand(event, message = undefined, player = undefined) {
         if (event === 'debug') {
             Utility.debug = !Utility.debug;
             Utility.sendDebugMessage('Debug mode: ' + Utility.debug);
@@ -30,6 +33,16 @@ export default class Utility {
             }
             TestRunner.runTest(message);
         }
+        else if (event === 'ui_example') {
+            // show an example ui popup
+            if (player) {
+                // call the method from the UIExample class
+                UIExample.testPopup(player, 'This is a test popup');
+            }
+            else {
+                mc.world.sendMessage('No player found to show the popup');
+            }
+        }
         // register any custom commands you need here
         // else if (event === 'my_custom_command') {
         // 	do things here
@@ -40,7 +53,6 @@ export default class Utility {
             Utility.sendDebugMessage('Unknown event: ' + event);
         }
     }
-
     static sendDebugMessage(message) {
         if (Utility.debug) {
             mc.world.sendMessage(message);
@@ -54,3 +66,5 @@ export default class Utility {
         return true;
     }
 }
+Utility.debug = false;
+Utility.packNamespace = 'wumpus';
